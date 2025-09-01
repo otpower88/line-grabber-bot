@@ -23,13 +23,23 @@ jobs:
       uses: android-actions/setup-android@v3
       with:
         api-level: 34
+        build-tools: 34.0.0
         
     - name: 🛠️ 安裝Gradle
       run: |
-        wget https://services.gradle.org/distributions/gradle-8.0-bin.zip
+        wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip
         unzip -q gradle-8.0-bin.zip
         export PATH=$PATH:$PWD/gradle-8.0/bin
         gradle --version
+        
+    - name: 📋 顯示項目結構
+      run: |
+        echo "=== 項目結構 ==="
+        find . -name "*.gradle" -type f
+        echo "=== build.gradle 內容 ==="
+        cat build.gradle
+        echo "=== app/build.gradle 內容 ==="
+        cat app/build.gradle
         
     - name: 🔑 創建簽名密鑰
       run: |
@@ -40,12 +50,12 @@ jobs:
     - name: 🧹 清理項目
       run: |
         export PATH=$PATH:$PWD/gradle-8.0/bin
-        gradle clean
+        gradle clean --stacktrace --info
         
     - name: 📦 構建APK
       run: |
         export PATH=$PATH:$PWD/gradle-8.0/bin
-        gradle assembleDebug --stacktrace
+        gradle assembleDebug --stacktrace --info
         
     - name: 🏷️ 重命名APK
       run: |
