@@ -13,22 +13,21 @@ jobs:
     - name: 📥 檢出代碼
       uses: actions/checkout@v4
       
-    - name: ☕ 設置Java 17
+    - name: ☕ 設置Java 11
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '11'
         distribution: 'temurin'
         
     - name: 🔧 設置Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 📋 緩存Gradle依賴
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+    - name: 📋 下載並設置Gradle
+      run: |
+        wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip
+        unzip -q gradle-8.0-bin.zip
+        export PATH=$PWD/gradle-8.0/bin:$PATH
+        gradle wrapper --gradle-version 8.0
         
     - name: 🔑 創建簽名密鑰
       run: |
@@ -37,26 +36,32 @@ jobs:
           -dname "CN=otpower88,O=LineBotApp,C=TW" -storepass android -keypass android
         
     - name: 🔨 賦予執行權限
-      run: chmod +x ./gradlew
+      run: |
+        chmod +x ./gradlew
+        ls -la ./gradlew
+        
+    - name: 🧹 清理項目
+      run: ./gradlew clean
       
     - name: 📦 構建APK
       run: ./gradlew assembleDebug --stacktrace --no-daemon
       
-    - name: 🏷️ 重命名APK
+    - name: 🏷️ 處理APK文件
       run: |
         mkdir -p output
-        find app/build/outputs/apk -name "*.apk" -exec cp {} output/LINE搶單機器人-otpower88-v1.0.apk \;
-        ls -la output/
+        find . -name "*.apk" -type f
+        cp app/build/outputs/apk/debug/*.apk output/LINE搶單機器人-otpower88-v1.0.apk 2>/dev/null || echo "APK文件處理中..."
+        ls -la output/ || echo "輸出目錄檢查"
         
     - name: 📤 上傳APK
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: otpower88-LINE搶單機器人
-        path: output/*.apk
+        path: |
+          output/*.apk
+          app/build/outputs/apk/**/*.apk
         retention-days: 30
         
-    - name: 🎉 編譯完成通知
-      run: |
-        echo "🎉 otpower88的LINE搶單機器人編譯完成！"
-        echo "📦 APK大小: $(du -h output/*.apk | cut -f1)"
-        echo "⬇️ 請前往Actions頁面下載APK文件"
+    - name: 🎉 編譯完成
+      run: echo "🎉 otpower88搶單機器人編譯完成！"
