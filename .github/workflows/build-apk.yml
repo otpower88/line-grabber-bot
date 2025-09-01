@@ -21,12 +21,15 @@ jobs:
         
     - name: 🔧 設置Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        api-level: 34
         
-    - name: 🛠️ 初始化Gradle Wrapper
+    - name: 🛠️ 安裝Gradle
       run: |
-        # 下載Gradle Wrapper JAR
-        mkdir -p gradle/wrapper
-        curl -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.0.0/gradle/wrapper/gradle-wrapper.jar
+        wget https://services.gradle.org/distributions/gradle-8.0-bin.zip
+        unzip -q gradle-8.0-bin.zip
+        export PATH=$PATH:$PWD/gradle-8.0/bin
+        gradle --version
         
     - name: 🔑 創建簽名密鑰
       run: |
@@ -34,17 +37,16 @@ jobs:
         keytool -genkey -v -keystore app/debug.keystore -alias debug -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=otpower88,O=LineBotApp,C=TW" -storepass android -keypass android
         
-    - name: 🔨 設置權限
-      run: |
-        chmod +x ./gradlew
-        ls -la ./gradlew
-        
     - name: 🧹 清理項目
-      run: ./gradlew clean --stacktrace
-      
+      run: |
+        export PATH=$PATH:$PWD/gradle-8.0/bin
+        gradle clean
+        
     - name: 📦 構建APK
-      run: ./gradlew assembleDebug --stacktrace --no-daemon
-      
+      run: |
+        export PATH=$PATH:$PWD/gradle-8.0/bin
+        gradle assembleDebug --stacktrace
+        
     - name: 🏷️ 重命名APK
       run: |
         mkdir -p output
